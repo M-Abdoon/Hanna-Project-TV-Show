@@ -1,26 +1,48 @@
 //You can edit ALL of the code here
 let allEpisodes = [];
+let allShows = [];
+async function getAllDataFromApi() {
+  const getShowsUrl     = `https://api.tvmaze.com/shows`; 
 
-async function getAllEpisodesFromApi() {
-  const api_url = `https://api.tvmaze.com/shows/82/episodes`;
-  let episodes = [];
   try {
-    const response = await fetch(api_url);
-    if (!response.ok) {
+    const getShowsUrlResponse     = await fetch(getShowsUrl);
+
+    if (!getShowsUrlResponse.ok) {
       alert("Bad response from the server!");
       return false;
     }
-    const data = await response.json();
-    episodes = Array.from(data);
-    return episodes;
+
+    const showsInJson     = await getShowsUrlResponse.json();
+
+    allShows    = Array.from(showsInJson);
+
+    for (const show of allShows) {
+      try {
+        const getEpisodeUrl  = `https://api.tvmaze.com/shows/${show.id}/episodes`;
+        const getEpisodeUrlResponse     = await fetch(getEpisodeUrl);
+
+        if (!getEpisodeUrlResponse.ok) {
+          alert("Bad response from the server!");
+          return false;
+        }
+
+        const episodeInJson  = await getEpisodeUrlResponse.json();
+        allEpisodes.push(...episodeInJson);
+
+      } catch (error) {
+        alert("Failed to get data!");
+      }
+    }
+
   } catch (error) {
     alert("Failed to connect to the server! "); // when error, user should be notified via interface, not in DOM
     return false;
   }
+
 }
 
 async function setup() {
-  allEpisodes = await getAllEpisodesFromApi();
+  await getAllDataFromApi();
 
   makePageForEpisodes(allEpisodes); // display all episodes for first time (default)
   displayEpisodesNumber (allEpisodes, allEpisodes); //number of episodes have to be displayed even if input is empty. 
@@ -90,7 +112,7 @@ function createEpisodeContainer(episode){
   h2.textContent = episode.name + " - " + episodeCode;
 
   const img = document.createElement("img");
-  img.src = episode.image.medium;
+  img.src = episode.image ? episode.image.medium : `https://placehold.co/600x400.png`;
   img.alt = episode.name;
 
   const p = document.createElement("p");
